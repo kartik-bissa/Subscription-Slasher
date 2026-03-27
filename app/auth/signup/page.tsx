@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { createUserWithEmailAndPassword, updateProfile, onAuthStateChanged } from 'firebase/auth'
+import { doc, setDoc } from 'firebase/firestore'
+import { auth, db } from '@/lib/firebase'
 
 export default function SignupPage() {
   const router = useRouter()
@@ -13,10 +16,10 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    const token = localStorage.getItem('subslash_token')
-    if (token) {
-      router.replace('/')
-    }
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) router.replace('/')
+    })
+    return () => unsubscribe()
   }, [router])
 
   async function handleSubmit(e: React.FormEvent) {
@@ -41,25 +44,22 @@ export default function SignupPage() {
     setLoading(true)
 
     try {
-      const res = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password, confirmPassword }),
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+      
+      // Update Auth Profile
+      await updateProfile(userCredential.user, { displayName: name })
+      
+      // Save full user details in Firestore
+      await setDoc(doc(db, 'users', userCredential.user.uid), {
+        name,
+        email,
+        created_at: new Date().toISOString()
       })
-      const data = await res.json()
 
-      if (!res.ok) {
-        setError(data.error || 'Signup failed')
-        setLoading(false)
-        return
-      }
-
-      localStorage.setItem('subslash_token', data.token)
-      localStorage.setItem('subslash_user', JSON.stringify(data.user))
-      router.replace('/')
-    } catch (err) {
-      setError((err as Error).message || 'Signup failed')
-    } finally {
+      // The onAuthStateChanged listener will automatically redirect
+    } catch (err: any) {
+      console.error(err)
+      setError(err.message || 'Signup failed')
       setLoading(false)
     }
   }

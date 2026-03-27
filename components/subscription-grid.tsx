@@ -18,29 +18,27 @@ import type { Subscription } from "@/lib/types"
 
 interface SubscriptionGridProps {
   subscriptions: Subscription[]
-  onUpdate: (subscriptions: Subscription[]) => void
+  onPauseStatus: (id: string) => void
+  onDeleteSub: (id: string) => void
 }
 
 type SortOption = 'cost-high' | 'cost-low' | 'name' | 'usage' | 'category'
 type FilterOption = 'all' | 'cancel-suggested' | 'low-usage' | 'high-cost'
 
-export function SubscriptionGrid({ subscriptions, onUpdate }: SubscriptionGridProps) {
+export function SubscriptionGrid({ subscriptions, onPauseStatus, onDeleteSub }: SubscriptionGridProps) {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState<SortOption>('cost-high')
   const [filterBy, setFilterBy] = useState<FilterOption>('all')
 
   const handlePause = (id: string) => {
-    const updated = subscriptions.map(sub => 
-      sub.id === id ? { ...sub, status: 'paused' as const } : sub
-    )
-    onUpdate(updated)
+    onPauseStatus(id)
   }
 
   const handleCancel = (id: string) => {
-    const updated = subscriptions.filter(sub => sub.id !== id)
-    onUpdate(updated)
+    onDeleteSub(id)
   }
+
 
   // Filter subscriptions
   let filtered = subscriptions.filter(sub => {

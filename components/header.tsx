@@ -1,7 +1,8 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Plus, Download, ArrowLeft, Sparkles, Settings } from "lucide-react"
+import Link from "next/link"
+import { Plus, Download, ArrowLeft, Sparkles, User, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 interface HeaderProps {
@@ -29,21 +30,27 @@ export function Header({ onAddSubscription, onExport, onReset, userName, onLogou
           Back
         </Button>
         <div className="h-6 w-px bg-border" />
-        <div className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary via-accent to-primary flex items-center justify-center">
             <Sparkles className="h-4 w-4 text-primary-foreground" />
           </div>
           <span className="font-semibold text-lg gradient-text-primary">SubSlash</span>
-        </div>
+        </Link>
       </div>
 
       <div className="flex items-center gap-4">
         {userName && (
-          <div className="text-sm text-muted-foreground">Hello, <span className="font-semibold text-foreground">{userName}</span></div>
+          <Link href="/profile" className="flex items-center group">
+            <Button variant="ghost" className="text-sm text-muted-foreground group-hover:text-primary">
+              <User className="h-4 w-4 mr-2" />
+              {userName}
+            </Button>
+          </Link>
         )}
 
         {onLogout && (
-          <Button variant="ghost" onClick={onLogout} className="text-destructive hover:text-destructive/80">
+          <Button variant="ghost" onClick={onLogout} className="text-destructive hover:bg-destructive/10 hover:text-destructive">
+            <LogOut className="h-4 w-4 mr-2" />
             Logout
           </Button>
         )}

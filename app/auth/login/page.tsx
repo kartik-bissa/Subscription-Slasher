@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth'
+import { auth } from '@/lib/firebase'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -11,10 +13,10 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    const token = localStorage.getItem('subslash_token')
-    if (token) {
-      router.replace('/')
-    }
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) router.replace('/')
+    })
+    return () => unsubscribe()
   }, [router])
 
   async function handleSubmit(e: React.FormEvent) {
@@ -22,34 +24,18 @@ export default function LoginPage() {
     setError('')
 
     if (!email || !password) {
-      setError('Enter email and password')
+      setError('Please fill out all fields')
       return
     }
 
     setLoading(true)
 
     try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      })
-
-      const data = await res.json()
-
-      if (!res.ok) {
-        setError(data.error || 'Login failed')
-        setLoading(false)
-        return
-      }
-
-      localStorage.setItem('subslash_token', data.token)
-      localStorage.setItem('subslash_user', JSON.stringify(data.user))
-
-      router.replace('/')
-    } catch (err) {
-      setError((err as Error).message || 'Login failed')
-    } finally {
+      await signInWithEmailAndPassword(auth, email, password)
+      // The onAuthStateChanged listener handles the redirect securely
+    } catch (err: any) {
+      console.error(err)
+      setError(err.message || 'Invalid email or password')
       setLoading(false)
     }
   }
@@ -58,7 +44,7 @@ export default function LoginPage() {
     <main className="min-h-screen flex items-center justify-center p-4">
       <section className="w-full max-w-md bg-white/8 border border-white/10 backdrop-blur-xl shadow-2xl rounded-3xl p-8 space-y-6">
         <h1 className="text-3xl font-bold text-white">Welcome back</h1>
-        <p className="text-sm text-muted-foreground">Login to continue to Subscription Slasher</p>
+        <p className="text-sm text-muted-foreground">Sign in to Subscription Slasher</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <label className="block">
@@ -97,13 +83,13 @@ export default function LoginPage() {
         </form>
 
         <p className="text-sm text-muted-foreground">
-          Don’t have an account?{' '}
+          Don't have an account?{' '}
           <button
             type="button"
             onClick={() => router.push('/auth/signup')}
             className="text-primary underline"
           >
-            Create account
+            Create one
           </button>
         </p>
       </section>
